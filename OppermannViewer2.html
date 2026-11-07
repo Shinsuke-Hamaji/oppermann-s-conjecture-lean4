@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Unified Oppermann / Goldbach Graph (Viewer2 Final)</title>
+  <title>Unified Oppermann / Goldbach Graph (Viewer2 Final - Rigorous Strict Interval)</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; margin: 20px; }
@@ -13,6 +13,8 @@
 </head>
 
 <body>
+  <h2>Unified Oppermann / Goldbach Graph (Viewer2 Strict)</h2>
+
   <div id="controls">
     <label>max n:
       <input type="number" id="maxN" value="200" min="2" />
@@ -51,21 +53,22 @@
 
       for (let n = 2; n <= maxN; n++) {
         const center = n * n;
-        const left = center - n;
-        const right = center + n;
-
+        
+        // Strict Open Interval: (n^2 - n, n^2 + n) excluding endpoints and center n^2
         let a = 0, b = 0;
-        for (let x = left; x <= right; x++) {
-          if (x % 2 === 0) continue;
+        for (let x = center - n + 1; x < center + n; x++) {
+          if (x === center) continue; // skip center n^2
+          if (x % 2 === 0) continue;  // focus on odd balance
           if (isPrime(x)) a++;
           else b++;
         }
 
         let Ml = 0, Mr = 0, Pp = 0, Cp = 0;
-        for (let k = 1; k <= n; k++) {
+        // Strict Pairs k ranges from 1 to n-1 (so L > n^2 - n and R < n^2 + n)
+        for (let k = 1; k < n; k++) {
           const L = center - k;
           const R = center + k;
-          if (L < left || R > right) continue;
+          
           if (L % 2 === 0 || R % 2 === 0) continue;
 
           const Lp = isPrime(L);
@@ -115,20 +118,18 @@
         data: {
           labels: ns,
           datasets: [
-            // 指定された 5つを点線に設定（b² のみを視認性の高い「blue」に変更）
-            { label: 'a (primes)', data: aArr, borderColor: 'red', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'a (primes in open interval)', data: aArr, borderColor: 'red', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
             { label: 'b (composites)', data: bArr, borderColor: 'blue', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
             { label: 'a² / (2a+2b)', data: a2Arr, borderColor: 'black', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
             { label: 'b² / (2a+2b)', data: b2Arr, borderColor: 'blue', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 2 },
             { label: 'ab / (a+b)', data: abArr, borderColor: 'magenta', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
 
-            // 他の要素をすべて実線に設定
-            { label: 'Pp (prime-prime)', data: PpArr, borderColor: 'red', fill: false, pointRadius: 0, borderWidth: 1 },
-            { label: 'Cp (composite-composite)', data: CpArr, borderColor: 'gray', fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'Pp (Prime-Prime)', data: PpArr, borderColor: 'red', fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'Cp (Composite-Composite)', data: CpArr, borderColor: 'gray', fill: false, pointRadius: 0, borderWidth: 1 },
             { label: 'Hp (Cp + Pp)', data: HpArr, borderColor: 'purple', fill: false, pointRadius: 0, borderWidth: 1 },
             { label: 'Mp (Ml + Mr)', data: MpArr, borderColor: 'brown', fill: false, pointRadius: 0, borderWidth: 1 },
-            { label: 'Ml (a,b)', data: MlArr, borderColor: 'green', fill: false, pointRadius: 0, borderWidth: 1 },
-            { label: 'Mr (b,a)', data: MrArr, borderColor: 'orange', fill: false, pointRadius: 0, borderWidth: 1 }
+            { label: 'Ml (Left-Prime)', data: MlArr, borderColor: 'green', fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'Mr (Right-Prime)', data: MrArr, borderColor: 'orange', fill: false, pointRadius: 0, borderWidth: 1 }
           ]
         },
         options: {
@@ -137,7 +138,7 @@
             y: { min: 0, max: yMax }
           },
           plugins: {
-            title: { display: true, text: 'Viewer2 Final: Synchronization & Terms Line-Style Separation' },
+            title: { display: true, text: 'Strict Oppermann Half-Interval Pair Synchronization' },
             legend: { position: 'bottom' }
           }
         }
