@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Unified Oppermann / Goldbach Graph (Viewer2 Final)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 20px; }
+    #controls { margin-bottom: 20px; }
+    canvas { max-width: 100%; margin-bottom: 40px; }
+    label { margin-right: 10px; }
+  </style>
+</head>
+
+<body>
+  <div id="controls">
+    <label>max n:
+      <input type="number" id="maxN" value="200" min="2" />
+    </label>
+
+    <label>Y-scale max:
+      <input type="number" id="yMax" value="100" min="1" />
+    </label>
+
+    <button id="runBtn">Run</button>
+  </div>
+
+  <canvas id="chartAll"></canvas>
+
+  <script>
+    function isPrime(x) {
+      if (x < 2) return false;
+      if (x === 2) return true;
+      if (x % 2 === 0) return false;
+      const r = Math.floor(Math.sqrt(x));
+      for (let i = 3; i <= r; i += 2) {
+        if (x % i === 0) return false;
+      }
+      return true;
+    }
+
+    function computeData(maxN) {
+      const ns = [];
+      const aArr = [], bArr = [];
+      const MlArr = [], MrArr = [];
+      const PpArr = [], CpArr = [];
+      const HpArr = [], MpArr = [];
+      const a2Arr = [];
+      const b2Arr = [];
+      const abArr = [];
+
+      for (let n = 2; n <= maxN; n++) {
+        const center = n * n;
+        const left = center - n;
+        const right = center + n;
+
+        let a = 0, b = 0;
+        for (let x = left; x <= right; x++) {
+          if (x % 2 === 0) continue;
+          if (isPrime(x)) a++;
+          else b++;
+        }
+
+        let Ml = 0, Mr = 0, Pp = 0, Cp = 0;
+        for (let k = 1; k <= n; k++) {
+          const L = center - k;
+          const R = center + k;
+          if (L < left || R > right) continue;
+          if (L % 2 === 0 || R % 2 === 0) continue;
+
+          const Lp = isPrime(L);
+          const Rp = isPrime(R);
+
+          if (Lp && Rp) Pp++;
+          else if (Lp && !Rp) Ml++;
+          else if (!Lp && Rp) Mr++;
+          else if (!Lp && !Rp) Cp++;
+        }
+
+        const denom = (2 * a + 2 * b || 1);
+        const denom2 = (a + b || 1);
+        const a2 = (a * a) / denom;
+        const b2 = (b * b) / denom;
+        const ab = (a * b) / denom2;
+
+        const Hp = Cp + Pp;
+        const Mp = Ml + Mr;
+
+        ns.push(n);
+        aArr.push(a);
+        bArr.push(b);
+        PpArr.push(Pp);
+        CpArr.push(Cp);
+        HpArr.push(Hp);
+        MpArr.push(Mp);
+        MlArr.push(Ml);
+        MrArr.push(Mr);
+        a2Arr.push(a2);
+        b2Arr.push(b2);
+        abArr.push(ab);
+      }
+
+      return { ns, aArr, bArr, PpArr, CpArr, HpArr, MpArr, MlArr, MrArr, a2Arr, b2Arr, abArr };
+    }
+
+    let chartAll;
+
+    function makeChart(data, yMax) {
+      const { ns, aArr, bArr, PpArr, CpArr, HpArr, MpArr, MlArr, MrArr, a2Arr, b2Arr, abArr } = data;
+
+      if (chartAll) chartAll.destroy();
+
+      chartAll = new Chart(document.getElementById('chartAll'), {
+        type: 'line',
+        data: {
+          labels: ns,
+          datasets: [
+            // 指定された 5つを点線に設定（b² のみを視認性の高い「blue」に変更）
+            { label: 'a (primes)', data: aArr, borderColor: 'red', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'b (composites)', data: bArr, borderColor: 'blue', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'a² / (2a+2b)', data: a2Arr, borderColor: 'black', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'b² / (2a+2b)', data: b2Arr, borderColor: 'blue', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 2 },
+            { label: 'ab / (a+b)', data: abArr, borderColor: 'magenta', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1 },
+
+            // 他の要素をすべて実線に設定
+            { label: 'Pp (prime-prime)', data: PpArr, borderColor: 'red', fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'Cp (composite-composite)', data: CpArr, borderColor: 'gray', fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'Hp (Cp + Pp)', data: HpArr, borderColor: 'purple', fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'Mp (Ml + Mr)', data: MpArr, borderColor: 'brown', fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'Ml (a,b)', data: MlArr, borderColor: 'green', fill: false, pointRadius: 0, borderWidth: 1 },
+            { label: 'Mr (b,a)', data: MrArr, borderColor: 'orange', fill: false, pointRadius: 0, borderWidth: 1 }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { min: 0, max: yMax }
+          },
+          plugins: {
+            title: { display: true, text: 'Viewer2 Final: Synchronization & Terms Line-Style Separation' },
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    document.getElementById('runBtn').addEventListener('click', () => {
+      const maxN = parseInt(document.getElementById('maxN').value, 10) || 200;
+      const yMax = parseInt(document.getElementById('yMax').value, 10) || 100;
+      makeChart(computeData(maxN), yMax);
+    });
+
+    makeChart(computeData(200), 100);
+  </script>
+</body>
+</html>
+
